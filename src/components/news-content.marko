@@ -1,0 +1,175 @@
+import "./news-content.less";
+
+class {
+  onCreate() {
+    this.state = {
+      query: "Apple",
+      loading: false,
+      articles: [],
+      error: null,
+      currentPage: 1,
+      perPage: 5,
+    };
+
+    this.fetchNews();
+  }
+
+  fetchNews() {
+    const { query } = this.state;
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&from=2025-03-01&sortBy=popularity&apiKey=41a1e43cc9ec4c449dde8c8598ccff6a`;
+
+    this.setState({ loading: true, error: null, articles: [] });
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status !== "ok" || !data.articles) {
+          this.setState({
+            articles: [],
+            loading: false,
+            error: data.message || "Failed to load news articles.",
+          });
+        } else {
+          this.setState({
+            articles: data.articles,
+            loading: false,
+            error: null,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching news:", err);
+        this.setState({
+          articles: [],
+          loading: false,
+          error: "Unable to fetch news at this time.",
+        });
+      });
+  }
+
+  onInputChange(event) {
+    this.setState({ query: event.target.value });
+  }
+
+  onSearchSubmit(event) {
+    event.preventDefault();
+    this.setState({ currentPage: 1 }, () => {
+      this.fetchNews();
+    });
+  }
+
+  onPerPageChange(event) {
+    this.setState({ perPage: Number(event.target.value), currentPage: 1 });
+  }
+
+  onPrevPage() {
+    if (this.state.currentPage > 1) {
+      this.setState({ currentPage: this.state.currentPage - 1 });
+    }
+  }
+
+  onNextPage() {
+    const totalPages = Math.ceil(
+      this.state.articles.length / this.state.perPage,
+    );
+    if (this.state.currentPage < totalPages) {
+      this.setState({ currentPage: this.state.currentPage + 1 });
+    }
+  }
+}
+<div class="search-bar">
+  <form role="search" aria-label="Search for news" on-submit("onSearchSubmit")>
+    <input
+      type="search"
+      placeholder="Search news..."
+      value=state.query
+      on-input("onInputChange")
+    >
+    <button type="submit">
+      Search
+    </button>
+    <select on-change("onPerPageChange") value=state.perPage>
+      <option value="5">
+        5 per page
+      </option>
+      <option value="10">
+        10 per page
+      </option>
+      <option value="20">
+        20 per page
+      </option>
+    </select>
+  </form>
+</div>
+
+<main>
+  <if(state.loading)>
+    <div class="loading">
+      Loading news...
+    </div>
+  </if>
+  <else-if(state.error)>
+    <div class="error-message">
+      ${state.error}
+    </div>
+  </else-if>
+  <else-if(state.articles.length === 0)>
+    <div class="no-news">
+      No news articles found.
+    </div>
+  </else-if>
+  <else>
+    <div class="cards-container">
+      <for|article, index| of=state.articles>
+        <if(
+          index >= (state.currentPage - 1) * state.perPage &&
+          index < state.currentPage * state.perPage
+        )>
+          <article class="card">
+            <div class="card-image">
+              <if(article.urlToImage)>
+                <img src=`${article.urlToImage}` alt="Article image">
+              </if>
+            </div>
+            <div class="card-content">
+              <div class="card-source">
+                ${article.source.name}
+                <span class="author">
+                  by ${article.author || "Unknown author"}
+                </span>
+              </div>
+              <h3 class="card-title">
+                <a href=`${article.url}` target="_blank" rel="noopener">
+                  ${article.title}
+                </a>
+              </h3>
+              <div class="card-description">
+                ${article.description}
+              </div>
+              <div class="card-date">
+                Published: ${article.publishedAt}
+              </div>
+            </div>
+          </article>
+        </if>
+      </for>
+    </div>
+  </else>
+</main>
+
+<if(state.articles.length && !state.loading && !state.error)>
+  <div class="pagination">
+    <button on-click("onPrevPage") disabled=(state.currentPage === 1)>
+      Previous
+    </button>
+    <span>
+      Page ${state.currentPage} of ${Math.ceil(state.articles.length / state.perPage) || 1}
+    </span>
+    <button
+      on-click("onNextPage")
+      disabled=(state.currentPage >= Math.ceil(state.articles.length / state.perPage))
+    >
+      Next
+    </button>
+  </div>
+</if>

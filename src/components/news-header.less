@@ -1,0 +1,58 @@
+.header-container {
+  width: 100%;
+  background-color: #333;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    img {
+      display: block;
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+    }
+
+    span {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+  }
+
+  .header-nav {
+    display: flex;
+    gap: 1rem;
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+  
+      display: flex;
+      gap: 1rem;
+  
+      a {
+        color: #fff;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+  
+        &:hover,
+        &:focus {
+          opacity: 0.8;
+        }
+  
+        /* Ensures a visible focus outline for accessibility */
+        &:focus {
+          outline: 2px solid #fff;
+          outline-offset: 2px;
+        }
+      }
+    }
+  }
+}
