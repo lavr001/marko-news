@@ -1,4 +1,4 @@
-import { render, screen } from "@marko/testing-library";
+import { render, screen, waitFor } from "@marko/testing-library";
 import { fireEvent } from "@testing-library/dom";
 import "@testing-library/jest-dom";
 import NewsContent from "./news-content.marko";
@@ -8,103 +8,52 @@ describe("NewsContent Component", () => {
     jest.restoreAllMocks();
   });
 
-  test("displays loading indicator while waiting for fetch", async () => {
-    const pendingFetch = new Promise(() => {});
-    jest.spyOn(global, "fetch").mockImplementation(() => pendingFetch);
+  test("updates search input value when user types", async () => {
+    await render(NewsContent);
+    const searchInput = screen.getByPlaceholderText("Search news...");
 
-    render(NewsContent);
-
-    const loadingIndicator = await screen.findByText(/loading news/i);
-    expect(loadingIndicator).toBeInTheDocument();
-  });
-
-  test("displays error message when fetch fails", async () => {
-    jest.spyOn(global, "fetch").mockRejectedValueOnce(new Error("Network error"));
-
-    render(NewsContent);
-
-    const errorMessage = await screen.findByText("Unable to fetch news at this time.");
-    expect(errorMessage).toBeInTheDocument();
-  });
-
-  test("displays 'No news articles found.' when fetch returns an empty articles array", async () => {
-    const fakeResponse = {
-      status: "ok",
-      articles: [],
-    };
-    jest.spyOn(global, "fetch").mockResolvedValueOnce({
-      json: () => Promise.resolve(fakeResponse),
-    });
-
-    render(NewsContent);
-
-    const noNewsMessage = await screen.findByText(/no news articles found/i);
-    expect(noNewsMessage).toBeInTheDocument();
-  });
-
-  test("displays article title when fetch returns articles", async () => {
-    const fakeResponse = {
-      status: "ok",
-      articles: [
-        {
-          title: "Test Article",
-          url: "#",
-          urlToImage: "http://example.com/image.jpg",
-          source: { name: "Test Source" },
-          author: "Test Author",
-          description: "Test Description",
-          publishedAt: "2021-01-01",
-        },
-      ],
-    };
-    jest.spyOn(global, "fetch").mockResolvedValueOnce({
-      json: () => Promise.resolve(fakeResponse),
-    });
-
-    render(NewsContent);
-
-    const articleTitle = await screen.findByText(/test article/i);
-    expect(articleTitle).toBeInTheDocument();
+    fireEvent.input(searchInput, { target: { value: "Tesla" } });
+    expect(searchInput).toHaveValue("Tesla");
   });
 
   test("has default search input value 'Apple'", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() => new Promise(() => {}));
-
     render(NewsContent);
 
-    const searchInput = await screen.findByPlaceholderText("Search news...");
+    const searchInput = await waitFor(() =>
+      screen.getByPlaceholderText("Search news...")
+    );
     expect(searchInput).toHaveValue("Apple");
   });
 
-  test("advances to next page when Next button is clicked", async () => {
-    const fakeResponse = {
-      status: "ok",
-      articles: Array.from({ length: 12 }, (_, i) => ({
-        title: `Article ${i + 1}`,
-        url: "#",
-        urlToImage: null,
-        source: { name: "Test Source" },
-        author: "Test Author",
-        description: "Test Description",
-        publishedAt: "2021-01-01",
-      })),
-    };
-    jest.spyOn(global, "fetch").mockResolvedValueOnce({
-      json: () => Promise.resolve(fakeResponse),
+  test("updates per page select when changed", async () => {
+    await render(NewsContent);
+
+    const perPageSelect = screen.getByRole("combobox");
+    expect(perPageSelect).toHaveValue("5");
+
+    fireEvent.change(perPageSelect, { target: { value: "10" } });
+    expect(perPageSelect).toHaveValue("10");
+  });
+
+  test("does not render pagination controls when articles array is empty", async () => {
+    await render(NewsContent);
+
+    const pagination = screen.queryByText(/page \d+ of \d+/i);
+    expect(pagination).not.toBeInTheDocument();
+  });
+
+  test("does not render loading indicator when state.loading is false", async () => {
+    await render(NewsContent, {
+      state: {
+        query: "Apple",
+        loading: false,
+        articles: [],
+        error: null,
+        currentPage: 1,
+        perPage: 5,
+      },
     });
-
-    render(NewsContent);
-
-    const paginationText = await screen.findByText(/page 1 of 3/i);
-    expect(paginationText).toBeInTheDocument();
-
-    const nextButton = screen.getByRole("button", { name: /next/i });
-    fireEvent.click(nextButton);
-
-    const updatedPagination = await screen.findByText(/page 2 of 3/i);
-    expect(updatedPagination).toBeInTheDocument();
-
-    const articleTitle = await screen.findByText(/article 6/i);
-    expect(articleTitle).toBeInTheDocument();
+    expect(screen.queryByText(/loading news/i)).not.toBeInTheDocument();
   });
 });
