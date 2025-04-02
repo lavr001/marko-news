@@ -14,9 +14,9 @@ class {
     this.fetchNews();
   }
 
-  fetchNews() {
-    const { query } = this.state;
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&from=2025-03-01&sortBy=popularity&apiKey=41a1e43cc9ec4c449dde8c8598ccff6a`;
+  fetchNews(passedQuery) {
+    const query = passedQuery || this.state.query;
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&from=2025-03-20&sortBy=popularity&apiKey=41a1e43cc9ec4c449dde8c8598ccff6a`;
 
     this.setState({ loading: true, error: null, articles: [] });
 
@@ -53,9 +53,10 @@ class {
 
   onSearchSubmit(event) {
     event.preventDefault();
-    this.setState({ currentPage: 1 }, () => {
-      this.fetchNews();
-    });
+    const newQuery = event.target.querySelector("input[type=search]").value;
+
+    this.setState({ query: newQuery, currentPage: 1 });
+    this.fetchNews(newQuery);
   }
 
   onPerPageChange(event) {
