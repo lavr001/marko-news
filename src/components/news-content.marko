@@ -10,7 +10,6 @@ class {
       perPage: 5,
     };
 
-    // Only fetch news on the client-side
     if (typeof window !== "undefined") {
       this.fetchNews();
     }
@@ -18,7 +17,23 @@ class {
 
   fetchNews(passedQuery) {
     const query = passedQuery || this.state.query;
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&from=2025-03-20&sortBy=popularity&apiKey=41a1e43cc9ec4c449dde8c8598ccff6a`;
+
+    const today = new Date();
+    const oneMonthAgo = new Date(today);
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() - 1);
+    if (targetDate.getDate() !== today.getDate()) {
+      targetDate.setDate(0);
+    }
+
+    const year = targetDate.getFullYear();
+    const month = (targetDate.getMonth() + 1).toString().padStart(2, "0");
+    const day = targetDate.getDate().toString().padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
+
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&from=${formattedDate}&sortBy=popularity&apiKey=41a1e43cc9ec4c449dde8c8598ccff6a`;
 
     this.setState({ loading: true, error: null, articles: [] });
 
@@ -168,12 +183,8 @@ class {
     <span>
       Page ${state.currentPage} of ${Math.ceil(state.articles.length / state.perPage) || 1}
     </span>
-    <button
-      on-click("onNextPage")
-      disabled=state.currentPage >=
-      Math.ceil(state.articles.length / state.perPage)
-    >
-      Next
+    <button on-click("onNextPage") disabled=state.currentPage>
+      = Math.ceil(state.articles.length / state.perPage) > Next
     </button>
   </div>
 </if>
