@@ -34,11 +34,16 @@ if (NODE_ENV === devEnv) {
 } else {
   app
     .use("/assets", express.static("dist/assets")) // Serve assets generated from vite.
+    .use(express.static("dist")) // Serve static files from 'dist' directory in production.
     .use((await import("./dist/index.js")).router);
 }
 
-await once(app.listen(PORT), "listening");
+if (NODE_ENV === devEnv) {
+  await once(app.listen(PORT), "listening");
+}
 
 console.timeEnd("Start");
 console.log(`Env: ${NODE_ENV}`);
 console.log(`Address: http://localhost:${PORT}`);
+
+export default app; // Export the app for Vercel
