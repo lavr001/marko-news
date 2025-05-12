@@ -1,17 +1,15 @@
-import { once } from "events";
 import express from "express";
 import markoMiddleware from "@marko/express";
 import compressionMiddleware from "compression";
 
 const devEnv = "development";
 const { NODE_ENV = devEnv, PORT = 3000 } = process.env;
-console.time("Start");
 
-const app = express()
-  .use(compressionMiddleware()) // Enable gzip compression for all HTTP responses.
-  .use(markoMiddleware());
+const app = express().use(compressionMiddleware()).use(markoMiddleware());
 
 if (NODE_ENV === devEnv) {
+  const { once } = await import("events"); // Import 'once' only when needed for listen
+  console.time("DevServerStart");
   const { createServer } = await import("vite");
   const devServer = await createServer({
     appType: "custom",
@@ -31,19 +29,66 @@ if (NODE_ENV === devEnv) {
       next(err);
     }
   });
-} else {
-  app
-    .use("/assets", express.static("dist/assets")) // Serve assets generated from vite.
-    .use(express.static("dist")) // Serve static files from 'dist' directory in production.
-    .use((await import("./dist/index.js")).router);
-}
-
-if (NODE_ENV === devEnv) {
   await once(app.listen(PORT), "listening");
+  console.timeEnd("DevServerStart");
+  console.log(`Env: ${NODE_ENV}`);
+  console.log(`Address: http://localhost:${PORT}`);
+} else {
+  // Production mode (Vercel)
+  console.log(`Production mode. NODE_ENV: ${NODE_ENV}`);
+
+  // Serve static assets
+  app.use("/assets", express.static("dist/assets"));
+  app.use(express.static("dist")); // Serves files from 'dist' (e.g., marko.svg)
+
+  try {
+    // Dynamically import the SSR bundle.
+    // Vite builds the SSR entry 'src/index.js' to 'dist/index.js'.
+    const ssrModule = await import("./dist/index.js");
+    if (ssrModule && ssrModule.router) {
+      app.use(ssrModule.router);
+    } else {
+      // This case should ideally not happen if the build is correct.
+      console.error(
+        "CRITICAL: SSR router not found in ./dist/index.js. Module content:",
+        ssrModule
+      );
+      app.use((req, res) => {
+        res
+          .status(500)
+          .type("text/plain")
+          .send(
+            "Server Error: SSR module loaded but router is missing. Check server logs."
+          );
+      });
+    }
+  } catch (error) {
+    console.error(
+      "CRITICAL: Failed to load or use SSR router from ./dist/index.js",
+      error.stack || error
+    );
+    app.use((req, res) => {
+      res
+        .status(500)
+        .type("text/plain")
+        .send(
+          "Server Error: SSR module failed to load. Check server logs for details."
+        );
+    });
+  }
+
+  // Generic error handler for any unhandled errors in the Express app on Vercel
+  app.use((err, req, res, next) => {
+    console.error(
+      "Unhandled error in Express app (production):",
+      err.stack || err
+    );
+    // Avoid using res.marko here if Marko itself could be the source of errors
+    res
+      .status(500)
+      .type("text/plain")
+      .send("Internal Server Error. An unexpected error occurred.");
+  });
 }
 
-console.timeEnd("Start");
-console.log(`Env: ${NODE_ENV}`);
-console.log(`Address: http://localhost:${PORT}`);
-
-export default app; // Export the app for Vercel
+export default app;

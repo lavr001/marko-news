@@ -1,5 +1,4 @@
 import "./news-content.less";
-
 class {
   onCreate() {
     this.state = {
@@ -11,7 +10,10 @@ class {
       perPage: 5,
     };
 
-    this.fetchNews();
+    // Only fetch news on the client-side
+    if (typeof window !== "undefined") {
+      this.fetchNews();
+    }
   }
 
   fetchNews(passedQuery) {
@@ -160,7 +162,7 @@ class {
 
 <if(state.articles.length && !state.loading && !state.error)>
   <div class="pagination">
-    <button on-click("onPrevPage") disabled=(state.currentPage === 1)>
+    <button on-click("onPrevPage") disabled=state.currentPage === 1>
       Previous
     </button>
     <span>
@@ -168,7 +170,8 @@ class {
     </span>
     <button
       on-click("onNextPage")
-      disabled=(state.currentPage >= Math.ceil(state.articles.length / state.perPage))
+      disabled=state.currentPage >=
+      Math.ceil(state.articles.length / state.perPage)
     >
       Next
     </button>
