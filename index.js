@@ -19,13 +19,9 @@ if (NODE_ENV === devEnv) {
   app.use(async (req, res, next) => {
     try {
       const { router } = await devServer.ssrLoadModule("./src/index.js");
-      router(req, res, handleNext);
+      // Express Router instances should be called with .handle() when used directly
+      router.handle(req, res, next);
     } catch (err) {
-      handleNext(err);
-    }
-
-    function handleNext(err) {
-      if (err) devServer.ssrFixStacktrace(err);
       next(err);
     }
   });
@@ -36,6 +32,34 @@ if (NODE_ENV === devEnv) {
 } else {
   // Production mode (Vercel)
   console.log(`Production mode. NODE_ENV: ${NODE_ENV}`);
+
+  // Log file existence before trying to import
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+
+    // Get current directory
+    const currentDir = process.cwd();
+    console.log(`Current working directory: ${currentDir}`);
+
+    // Check if dist directory exists
+    const distPath = path.join(currentDir, "dist");
+    const distExists = fs.existsSync(distPath);
+    console.log(`Dist directory exists: ${distExists}`);
+
+    // Check if dist/index.js exists
+    const ssrPath = path.join(distPath, "index.js");
+    const ssrExists = fs.existsSync(ssrPath);
+    console.log(`SSR bundle exists: ${ssrExists}`);
+
+    if (distExists) {
+      // Log contents of dist directory
+      const distFiles = fs.readdirSync(distPath);
+      console.log(`Dist directory contents: ${JSON.stringify(distFiles)}`);
+    }
+  } catch (fsError) {
+    console.error("Error checking file system:", fsError);
+  }
 
   // Serve static assets
   app.use("/assets", express.static("dist/assets"));
