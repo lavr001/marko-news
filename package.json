@@ -39,5 +39,8 @@
     "test": "jest",
     "preview": "vite preview"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  }
 }
