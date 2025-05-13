@@ -42,6 +42,20 @@ if (NODE_ENV === devEnv) {
     const currentDir = process.cwd();
     console.log(`Current working directory: ${currentDir}`);
 
+    // Log contents of the current directory (/var/task)
+    try {
+      const rootDirContents = fs.readdirSync(currentDir);
+      console.log(
+        `Root (/var/task) directory contents: ${JSON.stringify(
+          rootDirContents
+        )}`
+      );
+    } catch (readErr) {
+      console.error(
+        `Error reading root directory contents: ${readErr.message}`
+      );
+    }
+
     // Check if dist directory exists
     const distPath = path.join(currentDir, "dist");
     const distExists = fs.existsSync(distPath);
