@@ -1,19 +1,27 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
   "builds": [
     {
       "src": "index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["dist/**"]
+        "includeFiles": ["./dist/**", "public/**"]
       }
     }
   ],
   "routes": [
     {
+      "src": "/assets/(.*)",
+      "dest": "/dist/assets/$1"
+    },
+    {
+      "src": "/marko.svg",
+      "dest": "/dist/marko.svg"
+    },
+    {
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "buildCommand": "npm run build"
+  ]
 }
