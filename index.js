@@ -69,7 +69,8 @@ if (NODE_ENV === devEnv) {
     // Dynamically import the SSR bundle.
     const path = await import("path");
     const currentDir = process.cwd(); // Should be /var/task on Vercel
-    const ssrBundlePath = path.join(currentDir, "dist", "index.js");
+    // Declare ssrBundlePath here so it's accessible in the catch block if needed
+    let ssrBundlePath = path.join(currentDir, "dist", "index.js");
     console.log(
       `Attempting to import SSR bundle from absolute path: ${ssrBundlePath}`
     );
@@ -93,10 +94,13 @@ if (NODE_ENV === devEnv) {
       });
     }
   } catch (error) {
+    // Use a fallback for ssrBundlePath in the error message if it couldn't be determined
+    const pathForErrorLog =
+      typeof ssrBundlePath === "string"
+        ? ssrBundlePath
+        : "./dist/index.js (path resolution failed)";
     console.error(
-      `CRITICAL: Failed to load or use SSR router from ${
-        ssrBundlePath || "./dist/index.js"
-      }`,
+      `CRITICAL: Failed to load or use SSR router from ${pathForErrorLog}`,
       error.stack || error
     );
     app.use((req, res) => {
