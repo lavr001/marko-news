@@ -67,8 +67,14 @@ if (NODE_ENV === devEnv) {
 
   try {
     // Dynamically import the SSR bundle.
-    // Vite builds the SSR entry 'src/index.js' to 'dist/index.js'.
-    const ssrModule = await import("./dist/index.js");
+    const path = await import("path");
+    const currentDir = process.cwd(); // Should be /var/task on Vercel
+    const ssrBundlePath = path.join(currentDir, "dist", "index.js");
+    console.log(
+      `Attempting to import SSR bundle from absolute path: ${ssrBundlePath}`
+    );
+
+    const ssrModule = await import(ssrBundlePath); // Using absolute path
     if (ssrModule && ssrModule.router) {
       app.use(ssrModule.router);
     } else {
@@ -88,7 +94,9 @@ if (NODE_ENV === devEnv) {
     }
   } catch (error) {
     console.error(
-      "CRITICAL: Failed to load or use SSR router from ./dist/index.js",
+      `CRITICAL: Failed to load or use SSR router from ${
+        ssrBundlePath || "./dist/index.js"
+      }`,
       error.stack || error
     );
     app.use((req, res) => {
