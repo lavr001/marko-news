@@ -30,7 +30,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "rimraf dist && npm run build:server && npm run build:client",
+    "build": "rimraf dist && npm run build:server && npm run build:client && mkdir -p dist && touch dist/hello.txt",
     "build:client": "cross-env NODE_ENV=production vite build",
     "build:server": "cross-env NODE_ENV=production vite build --ssr src/index.js",
     "dev": "node --enable-source-maps index.js",
